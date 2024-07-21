@@ -27,11 +27,11 @@ function App() {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/parse', { url });
+      const response = await axios.post('https://easytask-backend-production.up.railway.app/parse', { url });
       setProduct(response.data);
       setImg(response.data.images[0]);
 
-      const priceResponse = await axios.get(`http://localhost:3001/api/${productId}`);
+      const priceResponse = await axios.get(`https://easytask-backend-production.up.railway.app/api/${productId}`);
       const l2Id = priceResponse.data.result.l2s[0].l2Id;
       const priceData = priceResponse.data.result.prices[l2Id];
       const stockStatus = priceResponse.data.result.stocks[l2Id].statusCode;
@@ -99,7 +99,13 @@ function App() {
                 <div className="product-info flex-1 p-5 pt-0 border-l border-gray-300">
                   <img src={img} alt="" className="w-full h-[400px] mb-2 object-contain" />
                   <p className="text-3xl text-red-500 mb-5">
-                    {productDetails ? <span>{(productDetails.price * 3.02).toFixed(2)}₸ <span className="text-black text-[25px]">/ {productDetails.price}¥</span></span> : 'Loading...'}
+                    {productDetails ? (
+                      productDetails.stockStatus === "OUT_STOCK" ? (
+                        <span>Товар нет в наличии</span>
+                      ) : (
+                        <span>{(productDetails.price * 3.02).toFixed(2)}₸ <span className="text-black text-[25px]">/ {productDetails.price}¥</span></span>
+                      )
+                    ) : 'Loading...'}
                   </p>
                   <div className="product-select mb-5">
                     <label htmlFor="color" className="block mb-2">Цвет</label>
