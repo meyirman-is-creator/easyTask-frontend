@@ -66,6 +66,7 @@ function App() {
             Parse
           </button>
         </form>
+        <span className='font-bold'>Пример: <span className='font-medium'>https://www.uniqlo.com/jp/ja/products/E465185-000/00?colorDisplayCode=52&sizeDisplayCode=004</span></span>
         {loading ? (
           <div className="product-container max-w-4xl mx-auto p-5 bg-white rounded shadow">
             <div className="skeleton h-10 w-1/2 mb-5 bg-gray-200 rounded"></div>
