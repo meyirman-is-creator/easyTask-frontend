@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState } from "react";
+import axios from "axios";
+import "./App.css";
 
 function App() {
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   const [product, setProduct] = useState(null);
   const [productDetails, setProductDetails] = useState(null);
   const [img, setImg] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [size1, setSize1] = useState(null);
 
   const extractIdFromUrl = (url) => {
     const idMatch = url.match(/\/products\/([^/]+)\//);
@@ -17,21 +18,36 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
 
     const productId = extractIdFromUrl(url);
     if (!productId) {
-      alert('Invalid URL format');
+      alert("Invalid URL format");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axios.post('https://easytask-backend-production.up.railway.app/parse', { url });
+      const response = await axios.post("https://easytask-backend-production.up.railway.app/parse", { url });
       setProduct(response.data);
+      const params = new URL(url).searchParams;
+      const sizeDisplayCode = parseInt(params.get("sizeDisplayCode"));
+      const colorDisplayCode = parseInt(params.get("colorDisplayCode"));
       setImg(response.data.images[0]);
+      setSelectedColor(
+        response.data.colors.find(
+          (color) => colorDisplayCode === parseInt(color.count)
+        ).name
+      );
+      setSize1(
+        response.data.sizes.find((size) => sizeDisplayCode === parseInt(size.id))
+          .name
+      );
 
-      const priceResponse = await axios.get(`https://easytask-backend-production.up.railway.app/api/${productId}`);
+      const priceResponse = await axios.get(
+        `https://easytask-backend-production.up.railway.app/api/${productId}`
+      );
       const l2Id = priceResponse.data.result.l2s[0].l2Id;
       const priceData = priceResponse.data.result.prices[l2Id];
       const stockStatus = priceResponse.data.result.stocks[l2Id].statusCode;
@@ -45,7 +61,7 @@ function App() {
 
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching product data', error);
+      console.error("Error fetching product data", error);
       setLoading(false);
     }
   };
@@ -53,7 +69,9 @@ function App() {
   return (
     <div className="">
       <header className="max-w-4xl mx-auto p-5 bg-gray-100">
-        <h1 className="text-3xl font-medium mb-5">Yerzhan Karatayev для вас =)</h1>
+        <h1 className="text-3xl font-medium mb-5">
+          Yerzhan Karatayev для вас =)
+        </h1>
         <form onSubmit={handleSubmit} className="mb-5 w-full">
           <input
             type="text"
@@ -62,11 +80,19 @@ function App() {
             placeholder="Enter Uniqlo product URL"
             className="p-2 border border-gray-300 rounded w-[90%] mb-3"
           />
-          <button type="submit" className="p-2 bg-red-500 w-[10%] text-white rounded">
+          <button
+            type="submit"
+            className="p-2 bg-red-500 w-[10%] text-white rounded"
+          >
             Parse
           </button>
         </form>
-        <span className='font-bold'>Пример: <span className='font-medium'>https://www.uniqlo.com/jp/ja/products/E465185-000/00?colorDisplayCode=52&sizeDisplayCode=004</span></span>
+        <span className="font-bold">
+          Пример:{" "}
+          <span className="font-medium">
+            https://www.uniqlo.com/jp/ja/products/E465185-000/00?colorDisplayCode=52&sizeDisplayCode=004
+          </span>
+        </span>
         {loading ? (
           <div className="product-container max-w-4xl mx-auto p-5 bg-white rounded shadow">
             <div className="skeleton h-10 w-1/2 mb-5 bg-gray-200 rounded"></div>
@@ -94,45 +120,98 @@ function App() {
               <div className="product-main flex mb-5">
                 <div className="product-images flex-1 grid grid-cols-3 gap-2">
                   {product.images.map((img, index) => (
-                    <img key={index} src={img} onClick={() => setImg(img)} alt={`Product ${index}`} className="w-full h-auto cursor-pointer" />
+                    <img
+                      key={index}
+                      src={img}
+                      onClick={() => setImg(img)}
+                      alt={`Product ${index}`}
+                      className="w-full h-auto cursor-pointer"
+                    />
                   ))}
                 </div>
                 <div className="product-info flex-1 p-5 pt-0 border-l border-gray-300">
-                  <img src={img} alt="" className="w-full h-[400px] mb-2 object-contain" />
+                  <img
+                    src={img}
+                    alt=""
+                    className="w-full h-[400px] mb-2 object-contain"
+                  />
                   <p className="text-3xl text-red-500 mb-5">
                     {productDetails ? (
                       productDetails.stockStatus === "OUT_STOCK" ? (
                         <span>Товар нет в наличии</span>
                       ) : (
-                        <span>{(productDetails.price * 3.02).toFixed(2)}₸ <span className="text-black text-[25px]">/ {productDetails.price}¥</span></span>
+                        <span>
+                          {(productDetails.price * 3.02).toFixed(2)}₸{" "}
+                          <span className="text-black text-[25px]">
+                            / {productDetails.price}¥
+                          </span>
+                        </span>
                       )
-                    ) : 'Loading...'}
+                    ) : (
+                      "Loading..."
+                    )}
                   </p>
                   <div className="product-select mb-5">
-                    <label htmlFor="color" className="block mb-2">Цвет</label>
+                    <label htmlFor="color" className="block mb-2">
+                      Цвет
+                    </label>
                     <div className="flex space-x-2">
                       {product.colors.map((color, index) => (
-                        <div key={index} className={`p-1 border ${selectedColor === color.name ? 'border-black' : 'border-gray-300'} rounded-full cursor-pointer`} onClick={() => setSelectedColor(color.name)}>
-                          <img src={color.src} alt={color.name} className="w-8 h-8 rounded-full" />
+                        <div
+                          key={index}
+                          className={`p-1 border ${
+                            selectedColor === color.name
+                              ? "border-black"
+                              : "border-gray-300"
+                          } rounded-full cursor-pointer`}
+                          onClick={() => setSelectedColor(color.name)}
+                        >
+                          <img
+                            src={color.src}
+                            alt={color.name}
+                            className="w-8 h-8 rounded-full"
+                          />
                         </div>
                       ))}
                     </div>
                     {selectedColor && (
                       <span className="mt-2 block text-gray-600">
-                        {product.colors.find(color => color.name === selectedColor).name}: {product.colors.find(color => color.name === selectedColor).count}
+                        {product.colors.find(
+                          (color) => color.name === selectedColor
+                        )?.name}
+                        :{" "}
+                        {product.colors.find(
+                          (color) => color.name === selectedColor
+                        )?.count}
                       </span>
                     )}
                   </div>
                   <div className="product-select mb-5">
-                    <label htmlFor="size" className="block mb-2">Размер</label>
-                    <select id="size" className="p-2 border border-gray-300 rounded w-full">
+                    <label htmlFor="size" className="block mb-2">
+                      Размер
+                    </label>
+                    <div className="flex space-x-2">
                       {product.sizes.map((size, index) => (
-                        <option key={index} value={size}>{size.replace(' (unavailable)', '')}</option>
+                        <div
+                          key={index}
+                          className={`p-3 border ${
+                            size1 === size.name
+                              ? "border-black bg-black text-white"
+                              : "border-gray-300"
+                          } rounded cursor-pointer`}
+                          onClick={() => setSize1(size.name)}
+                        >
+                          <span>{size.name}</span>
+                        </div>
                       ))}
-                    </select>
+                    </div>
                   </div>
                   <p className="stock-status mt-5 text-red-500">
-                    {productDetails ? (productDetails.backInStock ? 'Можно сделать возврат' : 'Товар возврату не подлежит') : 'Loading...'}
+                    {productDetails
+                      ? productDetails.backInStock
+                        ? "Можно сделать возврат"
+                        : "Товар возврату не подлежит"
+                      : "Loading..."}
                   </p>
                 </div>
               </div>
@@ -141,7 +220,14 @@ function App() {
               </div>
               <div className="product-videos">
                 {product.videos.map((video, index) => (
-                  <video key={index} loop autoPlay muted style={{ pointerEvents: 'none' }} className="w-full mb-2">
+                  <video
+                    key={index}
+                    loop
+                    autoPlay
+                    muted
+                    style={{ pointerEvents: "none" }}
+                    className="w-full mb-2"
+                  >
                     <source src={video} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
